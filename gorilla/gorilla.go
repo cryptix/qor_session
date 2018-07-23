@@ -8,6 +8,7 @@ import (
 
 	gorillaContext "github.com/gorilla/context"
 	"github.com/gorilla/sessions"
+	"github.com/pkg/errors"
 	"github.com/qor/qor/utils"
 	"github.com/qor/session"
 )
@@ -46,13 +47,16 @@ func (gorilla Gorilla) Add(w http.ResponseWriter, req *http.Request, key string,
 
 	session, err := gorilla.getSession(req)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "qor/gorrila: failed to getSession for req")
 	}
 
 	if str, ok := value.(string); ok {
 		session.Values[key] = str
 	} else {
-		result, _ := json.Marshal(value)
+		result, err := json.Marshal(value)
+		if err != nil {
+			return errors.Wrapf(err, "qor/gorrila: failed to marshal value: %T", value)
+		}
 		session.Values[key] = string(result)
 	}
 
